@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+.env.local
+
+# Mobile Tests
+mobile_tests/*.png
+mobile_tests/*.webp
