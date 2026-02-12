@@ -34,7 +34,10 @@ if [ $IS_TERMUX -eq 1 ]; then
     echo "📦 Updating Termux packages..."
     pkg update -y && pkg upgrade -y
     pkg install -y python nodejs git
-    termux-setup-storage
+    if [ ! -d "$HOME/storage" ]; then
+        echo "📂 Setting up Termux storage..."
+        termux-setup-storage
+    fi
 else
     # Mac/Linux logic
     if ! check_dep "git"; then echo "Please install git first."; exit 1; fi
