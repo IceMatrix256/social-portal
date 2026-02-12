@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
+    "backend": "python scripts/server.py || python3 scripts/server.py",
+    "start": "concurrently \"npm run backend\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "build:portable": "npm run build && zip -r social-portal-portable.zip dist scripts/server.py scripts/serve-update.py",
     "lint": "eslint .",
@@ -35,6 +37,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.24",
+    "concurrently": "^9.1.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

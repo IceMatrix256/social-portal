@@ -39,7 +39,7 @@ npm install
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut("$Home\Desktop\Social Portal.lnk")
 $Shortcut.TargetPath = "powershell.exe"
-$Shortcut.Arguments = "-NoExit -Command `"cd $InstallPath; npm run dev`""
+$Shortcut.Arguments = "-NoExit -Command `"cd $InstallPath; npm start`""
 $Shortcut.Description = "Start Social Portal"
 $Shortcut.IconLocation = "$InstallPath\public\favicon.ico" # Fallback if exists
 $Shortcut.Save()

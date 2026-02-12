@@ -64,7 +64,7 @@ npm install
 SHELL_RC="$HOME/.bashrc"
 if [[ "$SHELL" == */zsh ]]; then SHELL_RC="$HOME/.zshrc"; fi
 
-LAUNCH_COMMAND="alias socialportal='cd $INSTALL_PATH && npm run dev'"
+LAUNCH_COMMAND="alias socialportal='cd $INSTALL_PATH && npm start'"
 if ! grep -q "socialportal" "$SHELL_RC"; then
     echo "$LAUNCH_COMMAND" >> "$SHELL_RC"
     echo "✅ Alias 'socialportal' added to $SHELL_RC"
