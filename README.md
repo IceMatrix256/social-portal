@@ -34,13 +34,15 @@ Since the app is a static SPA, you can host it anywhere.
 
 To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app uses reliable CDN-backed CORS proxy services with automatic fallback:
 
-1. **cors.sh** - Cloudflare-backed, unlimited requests
-2. **cors.lol** - Cloudflare-backed, open source
-3. **corsfix** - Production-ready with advanced features
-4. **allorigins** - Fallback option
-5. **corsproxy.io** - Additional fallback
+**Priority order:**
+1. **Self-hosted** (if `VITE_CORS_PROXY_URL` is configured) - Your own proxy takes priority
+2. **cors.sh** - Cloudflare-backed, unlimited requests
+3. **cors.lol** - Cloudflare-backed, open source
+4. **corsfix** - Production-ready with advanced features
+5. **allorigins** - Fallback option
+6. **corsproxy.io** - Additional fallback
 
-For a robust self-hosted production setup, you can also configure your own CORS proxy using the `VITE_CORS_PROXY_URL` environment variable, which takes priority over all public services.
+For a robust self-hosted production setup, you can configure your own CORS proxy using the `VITE_CORS_PROXY_URL` environment variable.
 
 Networks that support direct (peer-to-peer) connections without a proxy:
 
