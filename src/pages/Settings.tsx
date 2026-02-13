@@ -138,6 +138,19 @@ export function Settings() {
 
             {/* Identity Section */}
             <SettingsSection title="Identity">
+                <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 m-4">
+                    <div className="flex gap-3">
+                        <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="font-medium text-yellow-200 mb-1">Privacy Notice</h4>
+                            <p className="text-sm text-yellow-300/90">
+                                Your private keys and bookmarks are stored locally in your browser. 
+                                Anyone with physical access to this device or malicious browser extensions could access them.
+                                For maximum privacy, use a dedicated browser profile or Incognito/Private Browsing mode.
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 <SettingsRow icon={User} label="Display Name">
                     <span className="text-sm text-zinc-400">{username}</span>
                     <ChevronRight className="w-4 h-4 text-zinc-600" />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { polycentricManager, type IdentityInfo } from '../lib/polycentric/manager';
 import {
     ShieldCheck, Fingerprint, Key, CheckCircle2,
-    Copy, Download, Upload, Plus, Pencil
+    Copy, Download, Upload, Plus, Pencil, AlertTriangle
 } from 'lucide-react';
 
 // ── Utils ────────────────────────────────────────────────────────────
@@ -311,6 +311,21 @@ export function Identity() {
                 </button>
                 {mode === 'view' && currentSystem && (
                     <div className="max-w-2xl">
+                        {/* Privacy Warning */}
+                        <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 mb-6">
+                            <div className="flex gap-3">
+                                <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h4 className="font-medium text-yellow-200 mb-1">Privacy Notice</h4>
+                                    <p className="text-sm text-yellow-300/90">
+                                        Your private keys and bookmarks are stored locally in your browser. 
+                                        Anyone with physical access to this device or malicious browser extensions could access them.
+                                        For maximum privacy, use a dedicated browser profile or Incognito/Private Browsing mode.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         {/* Profile Header */}
                         <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 mb-8">
                             <div className="w-24 h-24 rounded-full bg-zinc-800 p-1 border-2 border-zinc-700 shrink-0">

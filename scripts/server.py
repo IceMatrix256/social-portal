@@ -6,6 +6,7 @@ import os
 import sys
 import socket
 import ssl
+import random
 
 PORT = 8090
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +38,14 @@ PROXIES = {
     '/api/misskey-design': 'https://misskey.design',
     '/api/bluesky': 'https://public.api.bsky.app',
 }
+
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
+]
 
 class SPAHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -72,8 +81,8 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
         
         try:
             req = urllib.request.Request(target_url)
-            # Set a real browser user agent to avoid strict blocks (Reddit, etc.)
-            req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+            # Rotate User-Agent to avoid fingerprinting
+            req.add_header('User-Agent', random.choice(USER_AGENTS))
             
             # 15s timeout to prevent hanging forever
             # Create unverified context to avoid SSL errors on some pythons
