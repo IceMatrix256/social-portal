@@ -88,6 +88,8 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
         try:
             req = urllib.request.Request(target_url)
             req.add_header('User-Agent', random.choice(USER_AGENTS))
+            req.add_header('Accept', 'application/rss+xml, application/xml, text/xml, */*')
+            req.add_header('Accept-Language', 'en-US,en;q=0.5')
             
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
@@ -126,6 +128,8 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
             req = urllib.request.Request(target_url)
             # Rotate User-Agent to avoid fingerprinting
             req.add_header('User-Agent', random.choice(USER_AGENTS))
+            req.add_header('Accept', 'application/rss+xml, application/xml, text/xml, */*')
+            req.add_header('Accept-Language', 'en-US,en;q=0.5')
             
             # 15s timeout to prevent hanging forever
             # Create unverified context to avoid SSL errors on some pythons

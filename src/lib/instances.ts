@@ -5,10 +5,10 @@ export const REDLIB_INSTANCES = [
 ];
 
 export const NITTER_INSTANCES = [
-    "xcancel.com", "nitter.space", "nitter.poast.org", "nitter.moomoo.me",
-    "nitter.privacydev.net", "nuku.trabun.org", "lightbrd.com", "nitter.no-logs.com",
-    "nitter.cz", "nitter.rawbit.ninja", "nitter.uni-sonia.com", "nitter.tinfoil-hat.net",
-    "nitter.privacy.com.de"
+    "xcancel.com", "nuku.trabun.org", "nitter.space", "lightbrd.com",
+    "nitter.net", "nitter.privacyredirect.com", "nitter.poast.org",
+    "nitter.moomoo.me", "nitter.privacydev.net", "nitter.no-logs.com",
+    "nitter.cz", "nitter.uni-sonia.com"
 ];
 
 export const INVIDIOUS_INSTANCES = [
