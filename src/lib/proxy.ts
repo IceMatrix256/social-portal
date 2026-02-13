@@ -4,6 +4,12 @@ import { getRandomUserAgent } from './fingerprinting';
 const RETRIES_PER_PROXY = 2;
 const RETRY_BASE_DELAY_MS = 1000;
 const REQUEST_TIMEOUT_MS = 15000;
+const DIRECT_FETCH_HOSTS = new Set([
+    'public.api.bsky.app',
+    'mastodon.social',
+    'misskey.io',
+    'misskey.design',
+]);
 
 /**
  * List of CORS proxy services to try in order
@@ -125,6 +131,34 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
     
     // For native apps or production, try multiple proxies
     if (import.meta.env.PROD || isNative) {
+        let directHost = '';
+        try {
+            directHost = new URL(targetUrl).hostname.toLowerCase();
+        } catch {
+            directHost = '';
+        }
+
+        if (DIRECT_FETCH_HOSTS.has(directHost)) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+            try {
+                const response = await fetch(targetUrl, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    return await response.text();
+                }
+            } catch (error) {
+                console.warn(`[Proxy] Direct fetch failed for ${directHost}, falling back to proxies:`, error);
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
         const enabledProxies = PROXY_SERVICES.filter(p => !p.enabled || p.enabled());
         const errors: Array<{ proxy: string; error: string }> = [];
         

@@ -32,7 +32,7 @@ Since the app is a static SPA, you can host it anywhere.
 
 ### CORS Proxy Note
 
-To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app currently falls back to `allorigins.win` or internal dev proxies. For a robust self-hosted production setup, it is recommended to run a small CORS proxy alongside the static app.
+To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app falls back to `allorigins.win`/other public proxies or internal dev proxies when needed. For a robust self-hosted production setup, it is recommended to run a small CORS proxy alongside the static app.
 
 Networks that support direct (peer-to-peer) connections without a proxy:
 
@@ -40,6 +40,8 @@ Networks that support direct (peer-to-peer) connections without a proxy:
 - Nostr (via Relays)
 - Misskey (most instances)
 - Mastodon (most instances)
+
+In production/native mode, these direct-capable networks are attempted directly first; proxy fallback is only used if the direct request fails.
 
 ## Portable Deployment (Cross-Platform)
 
