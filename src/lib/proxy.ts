@@ -6,6 +6,13 @@ const RETRY_BASE_DELAY_MS = 1000;
 const REQUEST_TIMEOUT_MS = 15000;
 
 /**
+ * Detect if we are running in a native Capacitor environment (APK)
+ */
+function isNativeApp(): boolean {
+    return !!(window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
+}
+
+/**
  * List of CORS proxy services to try in order
  * First one is preferred, others are fallbacks
  * Updated with more reliable CDN-backed proxies (2026)
@@ -25,8 +32,7 @@ const PROXY_SERVICES: Array<{
         },
         enabled: () => {
             // Skip self-hosted proxy in native APK builds (no local server available)
-            const isNative = (window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
-            return !!import.meta.env.VITE_CORS_PROXY_URL && !isNative;
+            return !!import.meta.env.VITE_CORS_PROXY_URL && !isNativeApp();
         }
     },
     // CDN-backed reliable proxies
@@ -97,8 +103,7 @@ async function retryWithBackoff<T>(
 }
 
 export function getProxyUrl(targetUrl: string): string {
-    // Detect if we are running in a native Capacitor environment
-    const isNative = (window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
+    const isNative = isNativeApp();
 
     // Misskey instances usually support CORS, and our proxy gets blocked by Cloudflare (403)
     if (targetUrl.includes('misskey.io') || targetUrl.includes('misskey.design')) {
@@ -142,7 +147,7 @@ export function getProxyUrl(targetUrl: string): string {
  * Fetches content through multiple proxy services with fallback
  */
 export async function fetchProxyContent(targetUrl: string, options?: RequestInit): Promise<string> {
-    const isNative = (window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
+    const isNative = isNativeApp();
     
     // For native apps or production, try multiple proxies
     if (import.meta.env.PROD || isNative) {
