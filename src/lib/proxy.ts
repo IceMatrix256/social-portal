@@ -131,12 +131,13 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
     
     // For native apps or production, try multiple proxies
     if (import.meta.env.PROD || isNative) {
-        let directHost = '';
-        try {
-            directHost = new URL(targetUrl).hostname.toLowerCase();
-        } catch {
-            directHost = '';
-        }
+        const directHost = (() => {
+            try {
+                return new URL(targetUrl).hostname.toLowerCase();
+            } catch {
+                return '';
+            }
+        })();
 
         if (DIRECT_FETCH_HOSTS.has(directHost)) {
             const controller = new AbortController();
@@ -147,7 +148,6 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
                     ...options,
                     signal: controller.signal
                 });
-                clearTimeout(timeoutId);
 
                 if (response.ok) {
                     return await response.text();
