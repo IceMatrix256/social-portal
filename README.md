@@ -89,7 +89,7 @@ npm run dev
 If you prefer a standalone app experience without using Termux, you can download the latest pre-built APK:
 
 1. Go to the [Social Portal Releases Page](https://github.com/IceMatrix256/social-portal/releases).
-2. Download the `social-portal-alpha.apk` file from the latest release.
+2. Download the `app-debug.apk` file from the latest release.
 3. Install the `.apk` file on your Android device.
 
 ---
