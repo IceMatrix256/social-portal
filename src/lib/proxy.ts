@@ -16,14 +16,18 @@ const PROXY_SERVICES: Array<{
     parseResponse: (response: Response) => Promise<string>;
     enabled?: () => boolean;
 }> = [
-    // Self-hosted proxy takes priority if configured
+    // Self-hosted proxy takes priority if configured (but not in native APK builds)
     {
         name: 'self-hosted',
         url: import.meta.env.VITE_CORS_PROXY_URL || '',
         parseResponse: async (response: Response) => {
             return await response.text();
         },
-        enabled: () => !!import.meta.env.VITE_CORS_PROXY_URL
+        enabled: () => {
+            // Skip self-hosted proxy in native APK builds (no local server available)
+            const isNative = (window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
+            return !!import.meta.env.VITE_CORS_PROXY_URL && !isNative;
+        }
     },
     // CDN-backed reliable proxies
     {
