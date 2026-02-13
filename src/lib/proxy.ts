@@ -8,6 +8,7 @@ const REQUEST_TIMEOUT_MS = 15000;
 /**
  * List of CORS proxy services to try in order
  * First one is preferred, others are fallbacks
+ * Updated with more reliable CDN-backed proxies (2026)
  */
 const PROXY_SERVICES: Array<{
     name: string;
@@ -15,6 +16,38 @@ const PROXY_SERVICES: Array<{
     parseResponse: (response: Response) => Promise<string>;
     enabled?: () => boolean;
 }> = [
+    // Self-hosted proxy takes priority if configured
+    {
+        name: 'self-hosted',
+        url: import.meta.env.VITE_CORS_PROXY_URL || '',
+        parseResponse: async (response: Response) => {
+            return await response.text();
+        },
+        enabled: () => !!import.meta.env.VITE_CORS_PROXY_URL
+    },
+    // CDN-backed reliable proxies
+    {
+        name: 'cors.sh',
+        url: 'https://proxy.cors.sh/',
+        parseResponse: async (response: Response) => {
+            return await response.text();
+        }
+    },
+    {
+        name: 'cors.lol',
+        url: 'https://api.cors.lol/?url=',
+        parseResponse: async (response: Response) => {
+            return await response.text();
+        }
+    },
+    {
+        name: 'corsfix',
+        url: 'https://corsfix.com/api/proxy?url=',
+        parseResponse: async (response: Response) => {
+            return await response.text();
+        }
+    },
+    // Fallback to original proxies
     {
         name: 'allorigins',
         url: 'https://api.allorigins.win/get?url=',
@@ -29,22 +62,6 @@ const PROXY_SERVICES: Array<{
         parseResponse: async (response: Response) => {
             return await response.text();
         }
-    },
-    {
-        name: 'cors-anywhere',
-        url: 'https://cors-anywhere.herokuapp.com/',
-        parseResponse: async (response: Response) => {
-            return await response.text();
-        }
-    },
-    // Placeholder for self-hosted proxy
-    {
-        name: 'self-hosted',
-        url: import.meta.env.VITE_CORS_PROXY_URL || '',
-        parseResponse: async (response: Response) => {
-            return await response.text();
-        },
-        enabled: () => !!import.meta.env.VITE_CORS_PROXY_URL
     }
 ];
 
@@ -113,8 +130,8 @@ export function getProxyUrl(targetUrl: string): string {
         }
     }
 
-    // In Production (or unexpected envs), fall back to public proxy or relative path
-    return `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+    // In Production (or unexpected envs), fall back to reliable CDN-backed proxy
+    return `https://proxy.cors.sh/${encodeURIComponent(targetUrl)}`;
 }
 
 /**
