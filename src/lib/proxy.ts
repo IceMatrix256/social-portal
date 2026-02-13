@@ -4,7 +4,12 @@ import { getRandomUserAgent } from './fingerprinting';
  * List of CORS proxy services to try in order
  * First one is preferred, others are fallbacks
  */
-const PROXY_SERVICES = [
+const PROXY_SERVICES: Array<{
+    name: string;
+    url: string;
+    parseResponse: (response: Response) => Promise<string>;
+    enabled?: () => boolean;
+}> = [
     {
         name: 'allorigins',
         url: 'https://api.allorigins.win/get?url=',
@@ -67,7 +72,7 @@ async function retryWithBackoff<T>(
 
 export function getProxyUrl(targetUrl: string): string {
     // Detect if we are running in a native Capacitor environment
-    const isNative = (window as any).Capacitor?.isNative;
+    const isNative = (window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
 
     // Misskey instances usually support CORS, and our proxy gets blocked by Cloudflare (403)
     if (targetUrl.includes('misskey.io') || targetUrl.includes('misskey.design')) {
@@ -111,7 +116,7 @@ export function getProxyUrl(targetUrl: string): string {
  * Fetches content through multiple proxy services with fallback
  */
 export async function fetchProxyContent(targetUrl: string, options?: RequestInit): Promise<string> {
-    const isNative = (window as any).Capacitor?.isNative;
+    const isNative = (window as Window & { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
     
     // For native apps or production, try multiple proxies
     if (import.meta.env.PROD || isNative) {

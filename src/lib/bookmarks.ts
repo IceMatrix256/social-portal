@@ -1,6 +1,8 @@
 /**
  * Bookmark store — persists liked/saved posts in localStorage,
  * scoped per Polycentric identity and organized by feed category.
+ * 
+ * Note: Migration to IndexedDB is handled by secureStorage.ts
  */
 
 import type { UnifiedPost } from '../adapters/types';

@@ -98,7 +98,7 @@ export async function decryptData(encryptedData: EncryptedData, password: string
         
         const decoder = new TextDecoder();
         return decoder.decode(decrypted);
-    } catch (e) {
+    } catch {
         throw new Error('Incorrect password or corrupted data');
     }
 }

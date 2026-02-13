@@ -64,7 +64,12 @@ export async function migrateFromLocalStorage() {
         const oldIdentities = localStorage.getItem('social-portal-identities');
         if (oldIdentities) {
             const parsed = JSON.parse(oldIdentities);
-            for (const [systemKey, identity] of Object.entries(parsed as Record<string, any>)) {
+            for (const [systemKey, identity] of Object.entries(parsed as Record<string, {
+                username?: string;
+                privateKey?: string;
+                publicKey?: string;
+                createdAt?: string;
+            }>)) {
                 const existing = await secureDB.identities.get(systemKey);
                 if (!existing) {
                     await secureDB.identities.add({

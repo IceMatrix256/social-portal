@@ -1,6 +1,7 @@
 // import * as Polycentric from '@polycentric/polycentric-core';
 import { getPublicKey, utils, hashes } from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
+import { migrateFromLocalStorage } from '../secureStorage';
 
 // Configure @noble/ed25519 v3
 hashes.sha512 = sha512;
@@ -145,6 +146,13 @@ export const polycentricManager = {
     },
 
     async init(): Promise<boolean> {
+        // Attempt migration from localStorage to IndexedDB on first run
+        try {
+            await migrateFromLocalStorage();
+        } catch (e) {
+            console.error('[Init] Migration failed:', e);
+        }
+        
         usingFallback = true;
         fallbackIdentity = getActiveLocalIdentity();
         return !!fallbackIdentity;
