@@ -67,7 +67,14 @@ export async function migrateFromLocalStorage() {
     try {
         const oldIdentities = localStorage.getItem(STORAGE_KEY_IDENTITIES);
         if (oldIdentities) {
-            const parsed = JSON.parse(oldIdentities);
+            let parsed;
+            try {
+                parsed = JSON.parse(oldIdentities);
+            } catch (parseError) {
+                console.error('[Migration] Failed to parse identities JSON:', parseError);
+                return;
+            }
+            
             for (const [systemKey, identity] of Object.entries(parsed as Record<string, {
                 username?: string;
                 privateKey?: string;

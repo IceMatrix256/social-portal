@@ -126,7 +126,7 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
     // For native apps or production, try multiple proxies
     if (import.meta.env.PROD || isNative) {
         const enabledProxies = PROXY_SERVICES.filter(p => !p.enabled || p.enabled());
-        let lastError: Error | null = null;
+        const errors: Array<{ proxy: string; error: string }> = [];
         
         for (const proxy of enabledProxies) {
             if (!proxy.url) continue;
@@ -165,13 +165,16 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
                 return result;
                 
             } catch (error) {
-                lastError = error as Error;
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                errors.push({ proxy: proxy.name, error: errorMsg });
                 console.warn(`[Proxy] ${proxy.name} failed:`, error);
                 continue;
             }
         }
         
-        throw new Error(`All proxies failed. Last error: ${lastError?.message}`);
+        // Include all proxy failures in error message
+        const failureSummary = errors.map(e => `${e.proxy}: ${e.error}`).join('; ');
+        throw new Error(`All proxies failed. Errors: ${failureSummary}`);
     }
     
     // Development mode: use Vite proxy
