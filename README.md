@@ -32,13 +32,13 @@ Since the app is a static SPA, you can host it anywhere.
 
 ### CORS Proxy Note
 
-To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app uses reliable CDN-backed CORS proxy services with automatic fallback:
+To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app uses multiple CORS proxy services with automatic fallback:
 
 **Priority order:**
 1. **Self-hosted** (if `VITE_CORS_PROXY_URL` is configured) - Your own proxy takes priority
-2. **cors.sh** - Cloudflare-backed, unlimited requests
-3. **cors.lol** - Cloudflare-backed, open source
-4. **corsfix** - Production-ready with advanced features
+2. **cors.sh** - Free CORS proxy service
+3. **cors.lol** - Free, open-source CORS proxy
+4. **corsfix** - Production CORS proxy service
 5. **allorigins** - Fallback option
 6. **corsproxy.io** - Additional fallback
 
