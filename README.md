@@ -32,7 +32,15 @@ Since the app is a static SPA, you can host it anywhere.
 
 ### CORS Proxy Note
 
-To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app currently falls back to `allorigins.win` or internal dev proxies. For a robust self-hosted production setup, it is recommended to run a small CORS proxy alongside the static app.
+To bypass browser CORS restrictions for some legacy networks (like RSS feeds), the app uses reliable CDN-backed CORS proxy services with automatic fallback:
+
+1. **cors.sh** - Cloudflare-backed, unlimited requests
+2. **cors.lol** - Cloudflare-backed, open source
+3. **corsfix** - Production-ready with advanced features
+4. **allorigins** - Fallback option
+5. **corsproxy.io** - Additional fallback
+
+For a robust self-hosted production setup, you can also configure your own CORS proxy using the `VITE_CORS_PROXY_URL` environment variable, which takes priority over all public services.
 
 Networks that support direct (peer-to-peer) connections without a proxy:
 
