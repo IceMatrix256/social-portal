@@ -1,6 +1,10 @@
 import Dexie from 'dexie';
 import { type EncryptedData } from './encryption';
 
+// Storage key constants
+const STORAGE_KEY_IDENTITIES = 'social-portal-identities';
+const STORAGE_KEY_BOOKMARKS_PREFIX = 'social-portal-bookmarks-';
+
 interface StoredIdentity {
     systemKey: string;
     username: string;
@@ -61,7 +65,7 @@ export function setPasswordRequired(required: boolean) {
 export async function migrateFromLocalStorage() {
     // Migrate identities
     try {
-        const oldIdentities = localStorage.getItem('social-portal-identities');
+        const oldIdentities = localStorage.getItem(STORAGE_KEY_IDENTITIES);
         if (oldIdentities) {
             const parsed = JSON.parse(oldIdentities);
             for (const [systemKey, identity] of Object.entries(parsed as Record<string, {
@@ -90,9 +94,9 @@ export async function migrateFromLocalStorage() {
     
     // Migrate bookmarks
     try {
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('social-portal-bookmarks-'));
+        const keys = Object.keys(localStorage).filter(k => k.startsWith(STORAGE_KEY_BOOKMARKS_PREFIX));
         for (const key of keys) {
-            const identityKey = key.replace('social-portal-bookmarks-', '');
+            const identityKey = key.replace(STORAGE_KEY_BOOKMARKS_PREFIX, '');
             const existing = await secureDB.bookmarks.get(identityKey);
             if (!existing) {
                 const data = localStorage.getItem(key);

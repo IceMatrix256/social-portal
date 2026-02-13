@@ -1,6 +1,6 @@
 /**
  * Password-based encryption for private keys and sensitive data
- * Uses AES-256-GCM with PBKDF2 key derivation
+ * Uses AES-256-GCM with PBKDF2 key derivation (600,000 iterations per OWASP 2023)
  */
 
 /**
@@ -20,7 +20,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
         {
             name: 'PBKDF2',
             salt: salt as BufferSource,
-            iterations: 100000,
+            iterations: 600000,  // OWASP 2023 recommendation
             hash: 'SHA-256'
         },
         keyMaterial,

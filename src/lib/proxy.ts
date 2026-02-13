@@ -1,5 +1,10 @@
 import { getRandomUserAgent } from './fingerprinting';
 
+// Configuration constants
+const RETRIES_PER_PROXY = 2;
+const RETRY_BASE_DELAY_MS = 1000;
+const REQUEST_TIMEOUT_MS = 15000;
+
 /**
  * List of CORS proxy services to try in order
  * First one is preferred, others are fallbacks
@@ -132,7 +137,7 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
                 const result = await retryWithBackoff(async () => {
                     const proxyUrl = proxy.url + encodeURIComponent(targetUrl);
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+                    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
                     
                     try {
                         const response = await fetch(proxyUrl, {
@@ -154,7 +159,7 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
                         clearTimeout(timeoutId);
                         throw error;
                     }
-                }, 2, 1000);  // 2 retries per proxy
+                }, RETRIES_PER_PROXY, RETRY_BASE_DELAY_MS);  // Retries per proxy
                 
                 console.log(`[Proxy] Success with ${proxy.name}`);
                 return result;
@@ -172,7 +177,7 @@ export async function fetchProxyContent(targetUrl: string, options?: RequestInit
     // Development mode: use Vite proxy
     const url = getProxyUrl(targetUrl);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     
     try {
         const response = await fetch(url, {
