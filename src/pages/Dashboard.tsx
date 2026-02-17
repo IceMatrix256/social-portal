@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { LoadMoreTrigger } from "../components/LoadMoreTrigger";
 import { ErrorRetry } from "../components/ErrorRetry";
+import { polycentricManager } from "../lib/polycentric/manager";
+import { loadSyncedJSON, saveSyncedJSON, migrateLegacyKey, STORAGE_KEYS, getScopedStorageKey } from "../lib/sync";
 
 // ── Network definitions ──────────────────────────────────────────
 
@@ -56,6 +58,12 @@ const NETWORKS: NetworkDef[] = [
         icon: Radio, gradient: 'from-yellow-500 to-amber-600', shadow: 'shadow-yellow-500/20',
         category: 'social',
     },
+    {
+        id: 'threads', name: 'Threads',
+        desc: 'Public profile feed (curated trending)',
+        icon: MessageCircle, gradient: 'from-zinc-500 to-slate-600', shadow: 'shadow-zinc-500/20',
+        category: 'social',
+    },
     // Photos
     {
         id: 'pixelfed', name: 'Pixelfed',
@@ -89,12 +97,6 @@ const NETWORKS: NetworkDef[] = [
         category: 'videos',
     },
     {
-        id: 'twitter', name: 'Twitter',
-        desc: 'Privacy-focused Twitter explorer (via Nitter)',
-        icon: Cloud, gradient: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-500/20',
-        category: 'social',
-    },
-    {
         id: 'reddit', name: 'Reddit',
         desc: 'Popular link aggregation (via Redlib)',
         icon: Link2, gradient: 'from-orange-500 to-red-600', shadow: 'shadow-orange-500/20',
@@ -121,20 +123,15 @@ const SECTIONS = [
     { key: 'links', label: '🔗 Links', desc: 'News, links & aggregators' },
 ] as const;
 
-// ── Pin persistence ──────────────────────────────────────────────
+// ── Pin persistence (identity-scoped + syncable) ──────────────────
 
-const PINS_KEY = 'social-portal-pinned-networks';
-
-function loadPins(): string[] {
-    try {
-        return JSON.parse(localStorage.getItem(PINS_KEY) || '[]');
-    } catch {
-        return [];
-    }
+function loadPins(identity: string | null | undefined): string[] {
+    migrateLegacyKey(STORAGE_KEYS.pins, getScopedStorageKey(STORAGE_KEYS.pins, identity));
+    return loadSyncedJSON<string[]>(STORAGE_KEYS.pins, identity, []);
 }
 
-function savePins(pins: string[]) {
-    localStorage.setItem(PINS_KEY, JSON.stringify(pins));
+function savePins(identity: string | null | undefined, pins: string[]) {
+    saveSyncedJSON(STORAGE_KEYS.pins, identity, pins);
 }
 
 // ── Network Card ─────────────────────────────────────────────────
@@ -310,7 +307,7 @@ function NetworkFeed({
 
 export function Dashboard() {
     const [selectedNetwork, setSelectedNetwork] = useState<NetworkDef | null>(null);
-    const [pinnedIds, setPinnedIds] = useState<string[]>(loadPins);
+    const [pinnedIds, setPinnedIds] = useState<string[]>(() => loadPins(polycentricManager.systemKey));
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -321,12 +318,23 @@ export function Dashboard() {
         }
     }, []);
 
+    useEffect(() => {
+        const onSync = (e: any) => {
+            if (e?.detail?.baseKey !== STORAGE_KEYS.pins) return;
+            const id = polycentricManager.systemKey || 'anonymous';
+            if (e?.detail?.identity !== id) return;
+            setPinnedIds(loadPins(polycentricManager.systemKey));
+        };
+        window.addEventListener('social-portal-sync', onSync);
+        return () => window.removeEventListener('social-portal-sync', onSync);
+    }, []);
+
     const togglePin = useCallback((networkId: string) => {
         setPinnedIds(prev => {
             const next = prev.includes(networkId)
                 ? prev.filter(id => id !== networkId)
                 : [...prev, networkId];
-            savePins(next);
+            savePins(polycentricManager.systemKey, next);
             return next;
         });
     }, []);

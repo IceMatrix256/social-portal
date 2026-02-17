@@ -5,7 +5,7 @@ import { fetchProxyContent } from "../lib/proxy";
  * Generic RSS adapter for any standard feed.
  */
 export class RSSAdapter implements FeedAdapter {
-    name = "RSS Feed";
+    name = "RSS";
     description = "Standard web feed";
     private feedUrl: string;
 
@@ -55,15 +55,22 @@ export class RSSAdapter implements FeedAdapter {
                     .replace(/\s+/g, ' ')
                     .trim()
                     .substring(0, 280);
+                
+                const feedHost = (() => {
+                    try { return new URL(link).hostname; } catch { return new URL(this.feedUrl).hostname; }
+                })();
+                const feedOrigin = (() => {
+                    try { return new URL(link).origin; } catch { return new URL(this.feedUrl).origin; }
+                })();
 
                 return {
                     id: `rss-${guid}`,
                     source: 'rss' as const,
                     author: {
-                        name: new URL(link).hostname,
+                        name: feedHost,
                         handle: "rss",
-                        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${new URL(link).hostname}`,
-                        url: new URL(link).origin,
+                        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${feedHost}`,
+                        url: feedOrigin,
                     },
                     content: `<strong>${title}</strong>${cleanDesc ? `<p class="mt-1 text-zinc-400">${cleanDesc}</p>` : ''}`,
                     media,

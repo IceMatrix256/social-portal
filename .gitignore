@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Local junk
+nohup.out
+__pycache__/
+
 # Android
 android/.gradle
 android/app/build

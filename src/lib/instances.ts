@@ -1,18 +1,14 @@
 export const REDLIB_INSTANCES = [
+    "www.reddit.com",
     "l.opnxng.com", "redlib.catsarch.com", "redlib.perennialte.ch", "redlib.r4fo.com",
     "redlib.cow.rip", "redlib.privacyredirect.com", "redlib.nadeko.net", "redlib.4o1x5.dev",
     "redlib.orangenet.cc", "rl.bloat.cat", "redlib.tux.pizza"
 ];
 
 export const NITTER_INSTANCES = [
-    "nuku.trabun.org", "nitter.privacyredirect.com", "nitter.poast.org",
-    "nitter.net", "xcancel.com", "nitter.privacydev.net",
+    "xcancel.com", "nuku.trabun.org", "nitter.privacyredirect.com", "nitter.poast.org",
+    "nitter.net", "nitter.privacydev.net",
     "nitter.uni-sonia.com", "nitter.no-logs.com", "lightbrd.com"
-];
-
-export const INVIDIOUS_INSTANCES = [
-    "redirect.invidious.io", "yewtu.be", "inv.nadeko.net", "invidious.nerdvpn.de",
-    "invidious.tiekoetter.com", "inv.riverside.rocks", "invidious.flokinet.to", "invidious.lunar.icu"
 ];
 
 import { fetchProxyContent } from "./proxy";

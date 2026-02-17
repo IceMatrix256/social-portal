@@ -29,6 +29,7 @@ export const SOURCE_COLORS: Record<string, string> = {
     misskey: 'bg-yellow-500/20 text-yellow-400',
     'nostr-photos': 'bg-fuchsia-500/20 text-fuchsia-400',
     'nostr-videos': 'bg-rose-500/20 text-rose-400',
+    threads: 'bg-slate-500/20 text-slate-300',
 };
 
 // ── Comment input ─────────────────────────────────────────────────

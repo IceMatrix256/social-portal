@@ -16,6 +16,14 @@ The Social Portal is a **Single-Page Application (SPA)** that aggregates content
 - **Local Identity**: Your keys and data stay on your device.
 - **Privacy**: No tracking, no algorithm.
 - **Customizable**: Pin networks, manage topics, add custom RSS feeds.
+- **P2P Sync**: Optionally sync identity-scoped state across devices via Gun.js (configure peers).
+
+### P2P Sync peers (Gun.js)
+
+Gun runs local-only unless you configure peers. You can set peers via:
+
+- `.env`: `VITE_GUN_PEERS=https://your-gun-relay.example/gun`
+- In-app: **Settings → Sync → Gun peers** (reload required)
 
 ## Self-Hosting
 
@@ -42,6 +50,37 @@ Networks that support direct (peer-to-peer) connections without a proxy:
 - Mastodon (most instances)
 
 In production/native mode, these direct-capable networks are attempted directly first; proxy fallback is only used if the direct request fails.
+
+### Redlib bridge (desktop/web)
+
+When running `npm run backend`, the Python server exposes:
+
+- `/api/redlib/*` (Listing JSON validation + anti-challenge fallback chain)
+- `/api/healthz` (quick per-network health diagnostics)
+
+Source priority is:
+
+1. self-hosted endpoints from environment variables
+2. curated public instances
+3. safe proxy fallback (validated payload only)
+
+Environment variables:
+
+```bash
+SOCIAL_PORTAL_REDLIB_SELF_HOSTED=http://127.0.0.1:8082
+SOCIAL_PORTAL_ENABLE_REDLIB_BRIDGE=true
+```
+
+To run the upstream services locally, follow their official deployment docs and then point Social Portal at those local URLs:
+
+- Redlib: https://github.com/redlib-org/redlib
+
+Example once Redlib is running locally:
+
+```bash
+export SOCIAL_PORTAL_REDLIB_SELF_HOSTED=http://127.0.0.1:8082
+npm run backend
+```
 
 ## Portable Deployment (Cross-Platform)
 

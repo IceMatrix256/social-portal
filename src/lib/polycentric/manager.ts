@@ -2,6 +2,7 @@
 import { getPublicKey, utils, hashes } from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
 import { migrateFromLocalStorage } from '../secureStorage';
+import { syncIdentities, getSyncedIdentities, startSyncedJSON, STORAGE_KEYS, migrateLegacyKey, getScopedStorageKey } from '../sync';
 
 // Configure @noble/ed25519 v3
 hashes.sha512 = sha512;
@@ -45,6 +46,8 @@ function saveLocalIdentity(identity: LocalIdentity): void {
     all[identity.systemKey] = identity;
     localStorage.setItem(LOCAL_IDENTITIES_KEY, JSON.stringify(all));
     localStorage.setItem(ACTIVE_IDENTITY_KEY, identity.systemKey);
+    // Sync to P2P
+    syncIdentities(all);
 }
 
 function getActiveLocalIdentity(): LocalIdentity | null {
@@ -114,6 +117,28 @@ function base64urlDecode(str: string): Uint8Array {
 let processHandle: any = null;
 let usingFallback = false;
 let fallbackIdentity: LocalIdentity | null = null;
+let _startedSyncFor: string | null = null;
+
+function startIdentitySync(systemKey: string | null | undefined): void {
+    if (!systemKey) return;
+    if (_startedSyncFor === systemKey) return;
+    _startedSyncFor = systemKey;
+    // Ensure legacy local-only keys are moved under identity-scoped keys so they can sync.
+    migrateLegacyKey(STORAGE_KEYS.pins, getScopedStorageKey(STORAGE_KEYS.pins, systemKey));
+    migrateLegacyKey(STORAGE_KEYS.topics, getScopedStorageKey(STORAGE_KEYS.topics, systemKey));
+    migrateLegacyKey(STORAGE_KEYS.customRss, getScopedStorageKey(STORAGE_KEYS.customRss, systemKey));
+    migrateLegacyKey(STORAGE_KEYS.likes, getScopedStorageKey(STORAGE_KEYS.likes, systemKey));
+    migrateLegacyKey(STORAGE_KEYS.comments, getScopedStorageKey(STORAGE_KEYS.comments, systemKey));
+    migrateLegacyKey(`social-portal-bookmarks-${systemKey}`, getScopedStorageKey(STORAGE_KEYS.bookmarks, systemKey));
+    migrateLegacyKey(STORAGE_KEYS.threadsTrendingHandles, getScopedStorageKey(STORAGE_KEYS.threadsTrendingHandles, systemKey));
+    startSyncedJSON(STORAGE_KEYS.pins, systemKey);
+    startSyncedJSON(STORAGE_KEYS.topics, systemKey);
+    startSyncedJSON(STORAGE_KEYS.customRss, systemKey);
+    startSyncedJSON(STORAGE_KEYS.likes, systemKey);
+    startSyncedJSON(STORAGE_KEYS.comments, systemKey);
+    startSyncedJSON(STORAGE_KEYS.bookmarks, systemKey);
+    startSyncedJSON(STORAGE_KEYS.threadsTrendingHandles, systemKey);
+}
 
 // Cache for the dynamically imported SDK Protocol module
 let _Protocol: any = null;
@@ -155,6 +180,20 @@ export const polycentricManager = {
         
         usingFallback = true;
         fallbackIdentity = getActiveLocalIdentity();
+        startIdentitySync(fallbackIdentity?.systemKey);
+
+        // Listen for P2P synced identities
+        getSyncedIdentities((data) => {
+            if (data) {
+                localStorage.setItem(LOCAL_IDENTITIES_KEY, JSON.stringify(data));
+                // Update current if changed
+                const activeKey = localStorage.getItem(ACTIVE_IDENTITY_KEY);
+                if (activeKey && data[activeKey]) {
+                    fallbackIdentity = data[activeKey];
+                    startIdentitySync(fallbackIdentity?.systemKey);
+                }
+            }
+        });
         return !!fallbackIdentity;
     },
 
@@ -175,6 +214,7 @@ export const polycentricManager = {
 
             saveLocalIdentity(newId);
             fallbackIdentity = newId;
+            startIdentitySync(fallbackIdentity?.systemKey);
             console.log("Created real cryptographic identity:", systemKey);
         } catch (e) {
             console.error("Failed to generate keys:", e);
@@ -204,6 +244,7 @@ export const polycentricManager = {
         if (all[systemKey]) {
             localStorage.setItem(ACTIVE_IDENTITY_KEY, systemKey);
             fallbackIdentity = all[systemKey];
+            startIdentitySync(fallbackIdentity?.systemKey);
             return true;
         }
         return false;
@@ -311,6 +352,7 @@ export const polycentricManager = {
 
                 saveLocalIdentity(newId);
                 fallbackIdentity = newId;
+                startIdentitySync(fallbackIdentity?.systemKey);
                 return true;
             }
         } catch (e) {

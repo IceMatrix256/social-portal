@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { polycentricManager } from '../lib/polycentric/manager';
+import { STORAGE_KEYS, loadSyncedJSON, saveSyncedJSON, migrateLegacyKey, getScopedStorageKey } from '../lib/sync';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -18,27 +19,28 @@ interface CommentsStore {
     [postUrl: string]: PostComment[];
 }
 
-// ── Storage keys ──────────────────────────────────────────────────
-
-const LIKES_KEY = 'social-portal-likes';
-const COMMENTS_KEY = 'social-portal-comments';
+function identityKey(): string {
+    return polycentricManager.systemKey || 'anonymous';
+}
 
 function loadLikes(): LikesStore {
-    try { return JSON.parse(localStorage.getItem(LIKES_KEY) || '{}'); }
-    catch { return {}; }
+    const identity = identityKey();
+    migrateLegacyKey(STORAGE_KEYS.likes, getScopedStorageKey(STORAGE_KEYS.likes, identity));
+    return loadSyncedJSON<LikesStore>(STORAGE_KEYS.likes, identity, {});
 }
 
 function saveLikes(likes: LikesStore) {
-    localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+    saveSyncedJSON(STORAGE_KEYS.likes, identityKey(), likes);
 }
 
 function loadComments(): CommentsStore {
-    try { return JSON.parse(localStorage.getItem(COMMENTS_KEY) || '{}'); }
-    catch { return {}; }
+    const identity = identityKey();
+    migrateLegacyKey(STORAGE_KEYS.comments, getScopedStorageKey(STORAGE_KEYS.comments, identity));
+    return loadSyncedJSON<CommentsStore>(STORAGE_KEYS.comments, identity, {});
 }
 
 function saveComments(comments: CommentsStore) {
-    localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments));
+    saveSyncedJSON(STORAGE_KEYS.comments, identityKey(), comments);
 }
 
 // ── Hooks ─────────────────────────────────────────────────────────
@@ -48,6 +50,17 @@ export function useLike(postUrl: string) {
         const store = loadLikes();
         return !!store[postUrl];
     });
+
+    useEffect(() => {
+        const onSync = (e: any) => {
+            if (e?.detail?.baseKey !== STORAGE_KEYS.likes) return;
+            if (e?.detail?.identity !== identityKey()) return;
+            const store = loadLikes();
+            setLiked(!!store[postUrl]);
+        };
+        window.addEventListener('social-portal-sync', onSync);
+        return () => window.removeEventListener('social-portal-sync', onSync);
+    }, [postUrl]);
 
     const toggleLike = useCallback(() => {
         const store = loadLikes();
@@ -74,6 +87,17 @@ export function useComments(postUrl: string) {
     useEffect(() => {
         const store = loadComments();
         setComments(store[postUrl] || []);
+    }, [postUrl]);
+
+    useEffect(() => {
+        const onSync = (e: any) => {
+            if (e?.detail?.baseKey !== STORAGE_KEYS.comments) return;
+            if (e?.detail?.identity !== identityKey()) return;
+            const store = loadComments();
+            setComments(store[postUrl] || []);
+        };
+        window.addEventListener('social-portal-sync', onSync);
+        return () => window.removeEventListener('social-portal-sync', onSync);
     }, [postUrl]);
 
     const addComment = useCallback((text: string) => {

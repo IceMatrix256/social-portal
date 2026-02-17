@@ -1,6 +1,41 @@
 import type { FeedAdapter, UnifiedPost } from "./types";
 import { fetchWithInstanceFallback, REDLIB_INSTANCES } from "../lib/instances";
 
+function isValidRedlibListing(content: string): boolean {
+    if (!content || content.toLowerCase().includes("<html")) {
+        return false;
+    }
+    try {
+        const parsed = JSON.parse(content);
+        return parsed?.kind === "Listing" && Array.isArray(parsed?.data?.children);
+    } catch {
+        return false;
+    }
+}
+
+async function fetchFromRedlibBridge(path: string): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    try {
+        const response = await fetch(`/api/redlib${path}`, {
+            signal: controller.signal,
+            headers: {
+                "Accept": "application/json, text/plain, */*"
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Bridge HTTP ${response.status}`);
+        }
+        const text = await response.text();
+        if (!isValidRedlibListing(text)) {
+            throw new Error("Bridge payload failed Listing validation");
+        }
+        return text;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
 export class RedditAdapter implements FeedAdapter {
     name = "Reddit";
     description = "Front page of the internet (via Redlib)";
@@ -19,10 +54,13 @@ export class RedditAdapter implements FeedAdapter {
         }
 
         try {
-            const rawContent = await fetchWithInstanceFallback(path, REDLIB_INSTANCES, {
-                ...options,
-                headers: { 'User-Agent': 'SocialPortal/1.0' },
-                validate: (content: string) => content.includes('"kind": "Listing"')
+            const rawContent = await fetchFromRedlibBridge(path).catch(async (bridgeError) => {
+                console.warn("Redlib bridge failed, falling back to instance rotation:", bridgeError);
+                return fetchWithInstanceFallback(path, REDLIB_INSTANCES, {
+                    ...options,
+                    headers: { "User-Agent": "SocialPortal/1.0" },
+                    validate: isValidRedlibListing
+                });
             });
             const data = JSON.parse(rawContent);
 

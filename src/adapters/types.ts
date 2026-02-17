@@ -1,6 +1,6 @@
 export interface UnifiedPost {
     id: string;
-    source: 'mastodon' | 'nostr' | 'reddit' | 'lemmy' | 'pixelfed' | 'imgur' | 'piefed' | 'rss' | 'bluesky' | 'peertube' | 'polycentric' | 'misskey' | 'nostr-photos' | 'nostr-videos' | 'twitter' | 'youtube';
+    source: 'mastodon' | 'nostr' | 'reddit' | 'lemmy' | 'pixelfed' | 'imgur' | 'piefed' | 'rss' | 'bluesky' | 'polycentric' | 'misskey' | 'nostr-photos' | 'nostr-videos' | 'threads';
     author: {
         name: string;
         avatar: string;

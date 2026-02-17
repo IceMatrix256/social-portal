@@ -6,7 +6,7 @@
  * Also supports custom RSS feeds and topic browsing.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUnifiedFeed, FEED_CATEGORIES } from "../hooks/useUnifiedFeed";
 import type { FeedCategory } from "../hooks/useUnifiedFeed";
 import { PostCard } from "../components/PostCard";
@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { LoadMoreTrigger } from "../components/LoadMoreTrigger";
 import { ErrorRetry } from "../components/ErrorRetry";
+import { polycentricManager } from "../lib/polycentric/manager";
+import { loadSyncedJSON, saveSyncedJSON, migrateLegacyKey, STORAGE_KEYS, getScopedStorageKey } from "../lib/sync";
 
 // ── Topic Management ──────────────────────────────────────────────
 
@@ -38,11 +40,13 @@ const DEFAULT_TOPICS: Topic[] = [
     { label: 'Trending', tag: '', icon: TrendingUp, isDefault: true },
 ];
 
-function getStoredTopics(): Topic[] {
+type StoredTopic = Pick<Topic, 'label' | 'tag' | 'isDefault'>;
+
+function getStoredTopics(identity: string | null | undefined): Topic[] {
     try {
-        const stored = localStorage.getItem('social-portal-topics');
-        if (stored) {
-            const parsed = JSON.parse(stored);
+        migrateLegacyKey(STORAGE_KEYS.topics, getScopedStorageKey(STORAGE_KEYS.topics, identity));
+        const parsed = loadSyncedJSON<StoredTopic[] | null>(STORAGE_KEYS.topics, identity, null);
+        if (parsed !== null) {
             // Re-map icons for default topics, use Hash for others
             return parsed.map((t: any) => ({
                 ...t,
@@ -95,15 +99,29 @@ export function Discover() {
     const [isEditing, setIsEditing] = useState(false);
 
     // Topics State
-    const [topics, setTopics] = useState<Topic[]>(getStoredTopics);
+    const [topics, setTopics] = useState<Topic[]>(() => getStoredTopics(polycentricManager.systemKey));
     const [newTopic, setNewTopic] = useState("");
 
     // RSS State
     const [customFeeds, setCustomFeeds] = useState<string[]>(() => {
-        try {
-            return JSON.parse(localStorage.getItem('social-portal-custom-rss') || '[]');
-        } catch { return []; }
+        migrateLegacyKey(STORAGE_KEYS.customRss, getScopedStorageKey(STORAGE_KEYS.customRss, polycentricManager.systemKey));
+        return loadSyncedJSON<string[]>(STORAGE_KEYS.customRss, polycentricManager.systemKey, []);
     });
+    
+    useEffect(() => {
+        const onSync = (e: any) => {
+            const id = polycentricManager.systemKey || 'anonymous';
+            if (e?.detail?.identity !== id) return;
+            if (e?.detail?.baseKey === STORAGE_KEYS.customRss) {
+                setCustomFeeds(loadSyncedJSON<string[]>(STORAGE_KEYS.customRss, polycentricManager.systemKey, []));
+            }
+            if (e?.detail?.baseKey === STORAGE_KEYS.topics) {
+                setTopics(getStoredTopics(polycentricManager.systemKey));
+            }
+        };
+        window.addEventListener('social-portal-sync', onSync);
+        return () => window.removeEventListener('social-portal-sync', onSync);
+    }, []);
 
     const { posts, allCount, hasMore, loadMore, loading, error, refetch } = useUnifiedFeed({
         category: activeCategory,
@@ -124,14 +142,22 @@ export function Discover() {
         const added: Topic = { label: newTopic.trim(), tag, icon: Hash };
         const updated = [...topics, added];
         setTopics(updated);
-        localStorage.setItem('social-portal-topics', JSON.stringify(updated.map(t => ({ ...t, icon: undefined })))); // Don't save icon component
+        saveSyncedJSON(
+            STORAGE_KEYS.topics,
+            polycentricManager.systemKey,
+            updated.map((t) => ({ label: t.label, tag: t.tag, isDefault: t.isDefault }))
+        );
         setNewTopic("");
     };
 
     const removeTopic = (tag: string) => {
         const updated = topics.filter(t => t.tag !== tag);
         setTopics(updated);
-        localStorage.setItem('social-portal-topics', JSON.stringify(updated.map(t => ({ ...t, icon: undefined }))));
+        saveSyncedJSON(
+            STORAGE_KEYS.topics,
+            polycentricManager.systemKey,
+            updated.map((t) => ({ label: t.label, tag: t.tag, isDefault: t.isDefault }))
+        );
         if (activeTopic === tag) setActiveTopic(null);
     };
 
@@ -139,13 +165,13 @@ export function Discover() {
     const addCustomFeed = (url: string) => {
         const updated = [...customFeeds, url];
         setCustomFeeds(updated);
-        localStorage.setItem('social-portal-custom-rss', JSON.stringify(updated));
+        saveSyncedJSON(STORAGE_KEYS.customRss, polycentricManager.systemKey, updated);
     };
 
     const removeCustomFeed = (url: string) => {
         const updated = customFeeds.filter(f => f !== url);
         setCustomFeeds(updated);
-        localStorage.setItem('social-portal-custom-rss', JSON.stringify(updated));
+        saveSyncedJSON(STORAGE_KEYS.customRss, polycentricManager.systemKey, updated);
     };
 
     return (

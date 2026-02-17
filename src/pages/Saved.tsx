@@ -20,6 +20,7 @@ const SOURCE_COLORS: Record<string, string> = {
     bluesky: 'bg-sky-500/20 text-sky-400',
     peertube: 'bg-red-500/20 text-red-400',
     polycentric: 'bg-cyan-500/20 text-cyan-400',
+    threads: 'bg-slate-500/20 text-slate-300',
 };
 
 // ── Saved Page ──────────────────────────────────────────────

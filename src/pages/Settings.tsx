@@ -6,9 +6,10 @@ import {
     type AccessibilitySettings,
     type ThemeMode,
 } from "../lib/accessibility";
+import { getGunPeersConfig, setGunPeersConfig, loadSyncedJSON, saveSyncedJSON, STORAGE_KEYS } from "../lib/sync";
 import {
     Shield, LogOut, Trash2, Key, Sun, Moon, Eye, Type,
-    ChevronRight, AlertTriangle, User
+    ChevronRight, AlertTriangle, User, Link2
 } from "lucide-react";
 
 // ── Settings Section Component ────────────────────────────────────
@@ -106,12 +107,20 @@ export function Settings() {
     const [username, setUsername] = useState<string>("Unknown");
     const [showDangerZone, setShowDangerZone] = useState(false);
     const [a11y, setA11y] = useState<AccessibilitySettings>(getAccessibilitySettings);
+    const [gunPeers, setGunPeers] = useState<string>(() => getGunPeersConfig());
+    const [threadsTrending, setThreadsTrending] = useState<string>("");
+    const [rssFeeds, setRssFeeds] = useState<string>("");
 
     useEffect(() => {
         function loadIdentity() {
             setUsername(polycentricManager.username || 'Unknown');
             const key = polycentricManager.systemKey;
             setSystemKey(key || 'No identity loaded');
+            const identity = key || 'anonymous';
+            const handles = loadSyncedJSON<string[]>(STORAGE_KEYS.threadsTrendingHandles, identity, []);
+            setThreadsTrending(handles.join(','));
+            const feeds = loadSyncedJSON<string[]>(STORAGE_KEYS.customRss, identity, []);
+            setRssFeeds(feeds.join(','));
         }
         loadIdentity();
     }, []);
@@ -204,6 +213,82 @@ export function Settings() {
                         checked={a11y.atkinsonFont}
                         onChange={(atkinsonFont) => updateA11y({ atkinsonFont })}
                     />
+                </SettingsRow>
+            </SettingsSection>
+
+            {/* Sync Section */}
+            <SettingsSection title="Sync">
+                <SettingsRow
+                    icon={Link2}
+                    label="Gun peers"
+                    description="Comma-separated relay URLs (reload required)"
+                >
+                    <input
+                        value={gunPeers}
+                        onChange={(e) => setGunPeers(e.target.value)}
+                        placeholder="https://your-gun-relay.example/gun"
+                        className="w-56 bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                        onClick={() => setGunPeersConfig(gunPeers)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700"
+                    >
+                        Save
+                    </button>
+                </SettingsRow>
+                <SettingsRow
+                    icon={Link2}
+                    label="Threads trending handles"
+                    description="Comma-separated @handles (saved + synced per identity)"
+                >
+                    <input
+                        value={threadsTrending}
+                        onChange={(e) => setThreadsTrending(e.target.value)}
+                        placeholder="@georgetakei,@rupaul,@lilnasx"
+                        className="w-56 bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                        onClick={() => {
+                            const identity = polycentricManager.systemKey || 'anonymous';
+                            const blocked = new Set(['zuck', 'markzuckerberg', 'meta', 'elon', 'musk', 'elonmusk']);
+                            const handles = threadsTrending
+                                .split(',')
+                                .map(h => h.trim().replace(/^@/, '').toLowerCase())
+                                .filter(Boolean)
+                                .filter(h => !blocked.has(h));
+                            saveSyncedJSON(STORAGE_KEYS.threadsTrendingHandles, identity, Array.from(new Set(handles)));
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700"
+                    >
+                        Save
+                    </button>
+                </SettingsRow>
+                <SettingsRow
+                    icon={Link2}
+                    label="Additional RSS feeds"
+                    description="Comma-separated feed URLs (saved + synced per identity)"
+                >
+                    <input
+                        value={rssFeeds}
+                        onChange={(e) => setRssFeeds(e.target.value)}
+                        placeholder="https://lifehacker.com/rss,https://makezine.com/feed/"
+                        className="w-56 bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                        onClick={() => {
+                            const identity = polycentricManager.systemKey || 'anonymous';
+                            const urls = rssFeeds
+                                .split(',')
+                                .map(u => u.trim())
+                                .filter(Boolean)
+                                .map(u => (u.startsWith('http://') || u.startsWith('https://')) ? u : `https://${u}`)
+                                .filter(u => /^https?:\/\//i.test(u));
+                            saveSyncedJSON(STORAGE_KEYS.customRss, identity, Array.from(new Set(urls)));
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700"
+                    >
+                        Save
+                    </button>
                 </SettingsRow>
             </SettingsSection>
 

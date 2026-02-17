@@ -8,6 +8,7 @@
 import type { UnifiedPost } from '../adapters/types';
 import type { FeedCategory } from '../hooks/useUnifiedFeed';
 import { polycentricManager } from './polycentric/manager';
+import { STORAGE_KEYS, loadSyncedJSON, saveSyncedJSON, migrateLegacyKey, getScopedStorageKey } from './sync';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -44,25 +45,20 @@ function normalizeCategory(cat: string): FeedCategory {
     return cat as FeedCategory;
 }
 
-// ── Storage helpers ────────────────────────────────────────────
+// ── Storage helpers (identity-scoped + syncable) ──────────────────
 
-function storageKey(): string {
-    const identity = polycentricManager.systemKey || 'anonymous';
-    return `social-portal-bookmarks-${identity}`;
+function identityKey(): string {
+    return polycentricManager.systemKey || 'anonymous';
 }
 
 function loadStore(): BookmarkStore {
-    try {
-        const store = JSON.parse(localStorage.getItem(storageKey()) || '{}');
-        // Migrate legacy categories on read-ish (or just handle in getBookmarks)
-        return store;
-    } catch {
-        return {};
-    }
+    const identity = identityKey();
+    migrateLegacyKey(`social-portal-bookmarks-${identity}`, getScopedStorageKey(STORAGE_KEYS.bookmarks, identity));
+    return loadSyncedJSON<BookmarkStore>(STORAGE_KEYS.bookmarks, identity, {});
 }
 
 function saveStore(store: BookmarkStore): void {
-    localStorage.setItem(storageKey(), JSON.stringify(store));
+    saveSyncedJSON(STORAGE_KEYS.bookmarks, identityKey(), store);
 }
 
 // ── Strip HTML for clean title extraction ─────────────────────
@@ -87,6 +83,15 @@ export function subscribeBookmarks(listener: Listener): () => void {
 
 function notify(): void {
     listeners.forEach(fn => fn());
+}
+
+// Sync -> UI updates
+if (typeof window !== 'undefined') {
+    window.addEventListener('social-portal-sync', (e: any) => {
+        if (e?.detail?.baseKey !== STORAGE_KEYS.bookmarks) return;
+        if (e?.detail?.identity !== identityKey()) return;
+        notify();
+    });
 }
 
 export function addBookmark(post: UnifiedPost): void {
